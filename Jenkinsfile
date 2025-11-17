@@ -1,8 +1,6 @@
+cat > Jenkinsfile << 'EOF'
 pipeline {
     agent any
-    environment {
-        DOCKER_IMAGE = "aminshil/devops-app:${env.BUILD_NUMBER}"
-    }
     stages {
         // Étape GIT du PDF (Page 18)
         stage('GIT') {
@@ -26,7 +24,7 @@ pipeline {
             }
         }
         
-        // Étape SonarQube Analysis du PDF (Page 20) - IMPORTANT: Garder sans skipTests
+        // Étape SonarQube Analysis du PDF (Page 20)
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonarqube') {
@@ -37,24 +35,12 @@ pipeline {
             }
         }
         
-        // Étapes supplémentaires pour le déploiement
-        stage('Package') {
-            steps {
-                sh 'mvn package -DskipTests'
-            }
-        }
-        
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build -t ${DOCKER_IMAGE} ."
-            }
-        }
-        
+        // Déploiement direct avec votre image existante
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
-                    kubectl set image deployment/spring-app-deployment spring-app=${DOCKER_IMAGE} -n devops
-                    kubectl rollout status deployment/spring-app-deployment -n devops
+                    kubectl set image deployment/spring-app-deployment spring-app=amineshil/student-management-backend:latest -n devops
+                    kubectl rollout status deployment/spring-app-deployment --timeout=600s -n devops
                 """
             }
         }
@@ -68,3 +54,4 @@ pipeline {
         }
     }
 }
+EOF
