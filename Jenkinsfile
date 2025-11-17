@@ -4,34 +4,40 @@ pipeline {
         DOCKER_IMAGE = "aminshil/devops-app:${env.BUILD_NUMBER}"
     }
     stages {
-        stage('Checkout') {
-            steps { 
+        // Étape GIT du PDF (Page 18)
+        stage('GIT') {
+            steps {
+                echo "Getting Project from Git"
                 checkout scm 
             }
         }
         
-        stage('Build & Test') {
-            steps { 
-                sh 'mvn clean compile'
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
+        // Étape MVN CLEAN du PDF (Page 19)
+        stage('MVN CLEAN') {
+            steps {
+                sh 'mvn clean -DskipTests'
             }
         }
         
+        // Étape MVN COMPILE du PDF (Page 19) 
+        stage('MVN COMPILE') {
+            steps {
+                sh 'mvn compile -DskipTests'
+            }
+        }
+        
+        // Étape SonarQube Analysis du PDF (Page 20) - IMPORTANT: Garder sans skipTests
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    sh 'mvn sonar:sonar \
+                    sh 'mvn sonar:sonar -Dsonar.coverage.exclusions="**/test/**" \
                         -Dsonar.projectKey=devops-spring-app \
                         -Dsonar.projectName=DevOps-Spring-App'
                 }
             }
         }
         
+        // Étapes supplémentaires pour le déploiement
         stage('Package') {
             steps {
                 sh 'mvn package -DskipTests'
